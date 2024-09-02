@@ -22,8 +22,8 @@ app.use(helmet.noSniff()); // Prevent MIME type sniffing
 app.use(helmet.xssFilter()); // Prevent XSS attacks
 app.use(helmet.noCache()); // Disable client-side caching
 
-//For FCC testing purposes and enables user to connect from outside the hosting platform
-app.use(cors({origin: '*'})); 
+// For FCC testing purposes and enables user to connect from outside the hosting platform
+app.use(cors({ origin: '*' })); 
 
 // Index page (static HTML)
 app.route('/')
@@ -31,7 +31,7 @@ app.route('/')
     res.sendFile(process.cwd() + '/views/index.html');
   }); 
 
-//For FCC testing purposes
+// For FCC testing purposes
 fccTestingRoutes(app);
     
 // 404 Not Found Middleware
@@ -46,7 +46,7 @@ const portNum = process.env.PORT || 3000;
 // Set up server and tests
 const server = app.listen(portNum, () => {
   console.log(`Listening on port ${portNum}`);
-  if (process.env.NODE_ENV==='test') {
+  if (process.env.NODE_ENV === 'test') {
     console.log('Running Tests...');
     setTimeout(function () {
       try {
@@ -57,6 +57,27 @@ const server = app.listen(portNum, () => {
       }
     }, 1500);
   }
+});
+
+// Set up Socket.io for real-time communication
+const io = socket(server);
+
+io.on('connection', (socket) => {
+  console.log('New player connected:', socket.id);
+
+  socket.on('move', (data) => {
+    // Broadcast movement data to all other players
+    socket.broadcast.emit('move', data);
+  });
+
+  socket.on('collect', (itemId) => {
+    // Broadcast item collection to all other players
+    io.emit('collect', { id: itemId, player: socket.id });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Player disconnected:', socket.id);
+  });
 });
 
 module.exports = app; // For testing
